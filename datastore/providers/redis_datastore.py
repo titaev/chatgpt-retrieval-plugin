@@ -315,6 +315,8 @@ class RedisDataStore(DataStore):
             for doc in query_response.docs:
                 # Load JSON data
                 doc_json = json.loads(doc.json)
+                doc_json["source"] = None
+                doc_json["metadata"]["source"] = None
                 # Create document chunk object with score
                 result = DocumentChunkWithScore(
                     id=doc_json["metadata"]["document_id"],
