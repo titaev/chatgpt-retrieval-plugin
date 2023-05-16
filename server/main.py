@@ -12,6 +12,7 @@ from models.api import (
     UpsertRequest,
     UpsertResponse,
 )
+from models.models import DocumentMetadata
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
 
@@ -46,10 +47,14 @@ app.mount("/sub", sub_app)
 )
 async def upsert_file(
     file: UploadFile = File(...),
+    author: str = Body(...),
+    url: str = Body(...)
 ):
     document = await get_document_from_file(file)
 
     try:
+        document.metadata.author = author
+        document.metadata.url = url
         ids = await datastore.upsert([document])
         return UpsertResponse(ids=ids)
     except Exception as e:
@@ -79,14 +84,10 @@ async def upsert(
 async def query_main(
     request: QueryRequest = Body(...),
 ):
-    try:
-        results = await datastore.query(
-            request.queries,
-        )
-        return QueryResponse(results=results)
-    except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+    results = await datastore.query(
+        request.queries,
+    )
+    return QueryResponse(results=results)
 
 
 @sub_app.post(
