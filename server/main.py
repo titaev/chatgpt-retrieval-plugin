@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -48,7 +49,7 @@ app.mount("/sub", sub_app)
 async def upsert_file(
     file: UploadFile = File(...),
     author: str = Body(...),
-    url: str = Body(...)
+    url: Optional[str] = Body(None)
 ):
     document = await get_document_from_file(file)
 
