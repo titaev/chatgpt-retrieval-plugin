@@ -1,9 +1,13 @@
 import os
 from typing import Optional
+import aiohttp
 import uvicorn
+from io import BytesIO
 from fastapi import FastAPI, File, HTTPException, Depends, Body, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import Headers
+from urllib.parse import urlparse
 
 from models.api import (
     DeleteRequest,
@@ -13,7 +17,6 @@ from models.api import (
     UpsertRequest,
     UpsertResponse,
 )
-from models.models import DocumentMetadata
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
 
@@ -40,6 +43,45 @@ sub_app = FastAPI(
     dependencies=[Depends(validate_token)],
 )
 app.mount("/sub", sub_app)
+
+
+@app.post(
+    "/upsert-file-url",
+    response_model=UpsertResponse,
+)
+async def upsert_file_url(
+    file_url: str = Body(...),
+    author: str = Body(...),
+):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(file_url) as response:
+            file_text = await response.read()
+            content_type = response.headers.get('Content-Type')
+            url_path = urlparse(file_url).path
+            filename = url_path.split('/')[-1] if '/' in url_path else url_path
+
+    bytes_io = BytesIO(file_text)
+
+    # Создание объекта UploadFile
+    upload_file = UploadFile(
+        file=bytes_io,
+        filename=filename,  # замените на подходящее имя файла
+        headers=Headers({
+            "content-type": content_type,
+        })
+    )
+
+    document = await get_document_from_file(upload_file)
+
+    try:
+        document.metadata.author = author
+        document.metadata.url = file_url
+        ids = await datastore.upsert([document])
+        return UpsertResponse(ids=ids)
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail=f"str({e})")
+
 
 
 @app.post(
