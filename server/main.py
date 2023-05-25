@@ -32,7 +32,7 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sc
 
 
 app = FastAPI(dependencies=[Depends(validate_token)])
-app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
+# app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
 # Create a sub-application, in order to access just the query endpoint in an OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
 sub_app = FastAPI(
@@ -46,18 +46,18 @@ app.mount("/sub", sub_app)
 
 
 @app.post(
-    "/upsert-file-url",
+    "/upsert-file-link",
     response_model=UpsertResponse,
 )
-async def upsert_file_url(
-    file_url: str = Body(...),
+async def upsert_file_link(
+    file_link: str = Body(...),
     author: str = Body(...),
 ):
     async with aiohttp.ClientSession() as session:
-        async with session.get(file_url) as response:
+        async with session.get(file_link) as response:
             file_text = await response.read()
             content_type = response.headers.get('Content-Type')
-            url_path = urlparse(file_url).path
+            url_path = urlparse(file_link).path
             filename = url_path.split('/')[-1] if '/' in url_path else url_path
 
     bytes_io = BytesIO(file_text)
@@ -75,13 +75,12 @@ async def upsert_file_url(
 
     try:
         document.metadata.author = author
-        document.metadata.url = file_url
+        document.metadata.url = file_link
         ids = await datastore.upsert([document])
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
         raise HTTPException(status_code=500, detail=f"str({e})")
-
 
 
 @app.post(
