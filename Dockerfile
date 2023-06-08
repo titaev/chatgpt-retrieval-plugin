@@ -20,17 +20,17 @@ RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
 COPY . /app/
 
-RUN addgroup --system aii_admin_backend \
-    && adduser --system --ingroup aii_admin_backend aii_admin_backend
+RUN groupadd -g 1601 aii_backend && \
+    useradd -m -u 1601 -g aii_backend aii_backend
 
 # Устанавливаем права доступа к папке с приложением
-RUN chown -R aii_admin_backend:aii_admin_backend /app
+RUN chown -R aii_backend:aii_backend /app
 
 ## run collectstatic command
 #RUN python manage.py collectstatic --noinput
 
 # Запускаем приложение
-USER aii_admin_backend
+USER aii_backend
 
 # Heroku uses PORT, Azure App Services uses WEBSITES_PORT, Fly.io uses 8080 by default
 CMD ["sh", "-c", "uvicorn server.main:app --host 0.0.0.0 --port 8082"]

@@ -52,6 +52,7 @@ app.mount("/sub", sub_app)
 async def upsert_file_link(
     file_link: str = Body(...),
     author: str = Body(...),
+    created_at: str = Body(...)
 ):
     async with aiohttp.ClientSession() as session:
         async with session.get(file_link) as response:
@@ -76,6 +77,7 @@ async def upsert_file_link(
     try:
         document.metadata.author = author
         document.metadata.url = file_link
+        document.metadata.created_at = created_at
         ids = await datastore.upsert([document])
         return UpsertResponse(ids=ids)
     except Exception as e:
