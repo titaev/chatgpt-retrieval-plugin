@@ -7,6 +7,9 @@ from PyPDF2 import PdfReader
 import docx2txt
 import csv
 import pptx
+import textract
+import tempfile
+import chardet
 
 from models.models import Document, DocumentMetadata, Source
 
@@ -55,6 +58,19 @@ def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
     ):
         # Extract text from docx using docx2txt
         extracted_text = docx2txt.process(file)
+    elif mimetype == "application/msword":
+        # Extract text from doc using textract
+        with tempfile.NamedTemporaryFile(delete=False) as temp:
+            temp.write(file.read())
+        try:
+            raw_text = textract.process(temp.name, extension='doc')
+            # Detect encoding
+            detected = chardet.detect(raw_text)
+            encoding = detected.get("encoding", "utf-8")
+            # Decode the text using the detected encoding
+            extracted_text = raw_text.decode(encoding)
+        finally:
+            os.unlink(temp.name)
     elif mimetype == "text/csv":
         # Extract text from csv using csv module
         extracted_text = ""
