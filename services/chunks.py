@@ -5,6 +5,7 @@ from models.models import Document, DocumentChunk, DocumentChunkMetadata
 import tiktoken
 
 from services.openai import get_embeddings
+from langchain.text_splitter import TokenTextSplitter
 
 # Global variables
 tokenizer = tiktoken.get_encoding(
@@ -13,6 +14,7 @@ tokenizer = tiktoken.get_encoding(
 
 # Constants
 CHUNK_SIZE = 700  # The target size of each text chunk in tokens
+CHUNK_OVERLAP = 0
 MIN_CHUNK_SIZE_CHARS = 350  # The minimum size of each text chunk in characters
 MIN_CHUNK_LENGTH_TO_EMBED = 5  # Discard chunks shorter than this
 EMBEDDINGS_BATCH_SIZE = 128  # The number of embeddings to request at a time
@@ -97,7 +99,7 @@ def get_text_chunks(text: str, chunk_token_size: Optional[int]) -> List[str]:
 
 
 def create_document_chunks(
-    doc: Document, chunk_token_size: Optional[int]
+    doc: Document, chunk_token_size: Optional[int] = None, chunk_overlap: Optional[int] = None
 ) -> Tuple[List[DocumentChunk], str]:
     """
     Create a list of document chunks from a document object and return the document id.
@@ -105,6 +107,7 @@ def create_document_chunks(
     Args:
         doc: The document object to create chunks from. It should have a text attribute and optionally an id and a metadata attribute.
         chunk_token_size: The target size of each chunk in tokens, or None to use the default CHUNK_SIZE.
+        chunk_overlap: how many overlap between chunks, default CHUNK_OVERLAP.
 
     Returns:
         A tuple of (doc_chunks, doc_id), where doc_chunks is a list of document chunks, each of which is a DocumentChunk object with an id, a document_id, a text, and a metadata attribute,
@@ -117,8 +120,18 @@ def create_document_chunks(
     # Generate a document id if not provided
     doc_id = doc.id or str(uuid.uuid4())
 
-    # Split the document text into chunks
-    text_chunks = get_text_chunks(doc.text, chunk_token_size)
+    # Split the document text into chunks OLD
+    # text_chunks = get_text_chunks(doc.text, 700)
+
+    # Split the document text into chunks NEW!!!!!
+    text_splitter = TokenTextSplitter.from_tiktoken_encoder(
+        encoding_name="cl100k_base",
+        chunk_size=chunk_token_size if chunk_token_size else CHUNK_SIZE,
+        chunk_overlap=chunk_overlap if chunk_overlap else CHUNK_OVERLAP,
+        disallowed_special=()
+    )
+    text_chunks = text_splitter.split_text(doc.text)
+
 
     metadata = (
         DocumentChunkMetadata(**doc.metadata.__dict__)
@@ -147,7 +160,7 @@ def create_document_chunks(
 
 
 def get_document_chunks(
-    documents: List[Document], chunk_token_size: Optional[int]
+    documents: List[Document], chunk_token_size: Optional[int] = None, chunk_overlap: Optional[int] = None
 ) -> Dict[str, List[DocumentChunk]]:
     """
     Convert a list of documents into a dictionary from document id to list of document chunks.
@@ -155,6 +168,7 @@ def get_document_chunks(
     Args:
         documents: The list of documents to convert.
         chunk_token_size: The target size of each chunk in tokens, or None to use the default CHUNK_SIZE.
+        chunk_overlap: how many overlap between chunks, default CHUNK_OVERLAP.
 
     Returns:
         A dictionary mapping each document id to a list of document chunks, each of which is a DocumentChunk object
@@ -168,7 +182,7 @@ def get_document_chunks(
 
     # Loop over each document and create chunks
     for doc in documents:
-        doc_chunks, doc_id = create_document_chunks(doc, chunk_token_size)
+        doc_chunks, doc_id = create_document_chunks(doc, chunk_token_size, chunk_overlap)
 
         # Append the chunks for this document to the list of all chunks
         all_chunks.extend(doc_chunks)

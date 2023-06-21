@@ -1,5 +1,5 @@
 name=aii_admin_backend
-tag=retrieval_plugin_test4
+tag=retrieval_plugin_test5
 container_name=retrieval_plugin
 run:
 	docker run --network host --env-file /etc/aii/retrieval_plugin.env --name $(container_name) -d  $(name):$(tag)

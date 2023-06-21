@@ -52,7 +52,9 @@ app.mount("/sub", sub_app)
 async def upsert_file_link(
     file_link: str = Body(...),
     author: str = Body(...),
-    created_at: str = Body(...)
+    created_at: str = Body(...),
+    chunk_size: Optional[int] = Body(default=None),
+    chunk_overlap: Optional[int] = Body(default=None),
 ):
     async with aiohttp.ClientSession() as session:
         async with session.get(file_link) as response:
@@ -78,7 +80,7 @@ async def upsert_file_link(
         document.metadata.author = author
         document.metadata.url = file_link
         document.metadata.created_at = created_at
-        ids = await datastore.upsert([document])
+        ids = await datastore.upsert([document], chunk_size, chunk_overlap)
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
@@ -92,14 +94,16 @@ async def upsert_file_link(
 async def upsert_file(
     file: UploadFile = File(...),
     author: str = Body(...),
-    url: Optional[str] = Body(None)
+    url: Optional[str] = Body(None),
+    chunk_size: Optional[int] = Body(default=None),
+    chunk_overlap: Optional[int] = Body(default=None),
 ):
     document = await get_document_from_file(file)
 
     try:
         document.metadata.author = author
         document.metadata.url = url
-        ids = await datastore.upsert([document])
+        ids = await datastore.upsert([document], chunk_size, chunk_overlap)
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
@@ -113,12 +117,8 @@ async def upsert_file(
 async def upsert(
     request: UpsertRequest = Body(...),
 ):
-    try:
-        ids = await datastore.upsert(request.documents)
-        return UpsertResponse(ids=ids)
-    except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+    ids = await datastore.upsert(request.documents, request.chunk_size, request.chunk_overlap)
+    return UpsertResponse(ids=ids)
 
 
 @app.post(

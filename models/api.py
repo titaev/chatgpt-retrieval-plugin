@@ -10,6 +10,8 @@ from typing import List, Optional
 
 class UpsertRequest(BaseModel):
     documents: List[Document]
+    chunk_size: Optional[int] = None
+    chunk_overlap: Optional[int] = None
 
 
 class UpsertResponse(BaseModel):
