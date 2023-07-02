@@ -117,8 +117,12 @@ async def upsert_file(
 async def upsert(
     request: UpsertRequest = Body(...),
 ):
-    ids = await datastore.upsert(request.documents, request.chunk_size, request.chunk_overlap)
-    return UpsertResponse(ids=ids)
+    try:
+        ids = await datastore.upsert(request.documents, request.chunk_size, request.chunk_overlap)
+        return UpsertResponse(ids=ids)
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @app.post(

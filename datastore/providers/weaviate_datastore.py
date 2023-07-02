@@ -81,6 +81,10 @@ SCHEMA = {
 }
 
 
+def escape_double_quotes(input_string):
+    return input_string.replace("\"", "\\\"")
+
+
 def extract_schema_properties(schema):
     properties = schema["properties"]
 
@@ -196,6 +200,8 @@ class WeaviateDataStore(DataStore):
 
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
             logger.debug(f"Query: {query.query}")
+            query.query = escape_double_quotes(query.query)
+            logger.debug(f"Escaped query: {query.query}")
             if not hasattr(query, "filter") or not query.filter:
                 result = (
                     self.client.query.get(
