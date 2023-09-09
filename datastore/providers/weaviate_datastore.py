@@ -85,6 +85,31 @@ def escape_double_quotes(input_string):
     return input_string.replace("\"", "\\\"")
 
 
+def escape_all_symbols(input_string):
+    # Экранирование специальных символов
+    escaped_str = input_string.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+    # Преобразование оставшихся символов в Unicode escape-последовательности
+    return "".join(f"\\u{ord(c):04x}" if ord(c) > 126 else c for c in escaped_str)
+
+
+def escape_special_symbols(input_string):
+    # Экранирование специальных символов
+    replacements = {
+        "\\": "\\\\",
+        '"': '\\"',
+        "\n": "\\n",
+        "\r": "\\r",
+        "\t": "\\t",
+        "•": "\\u2022",
+    }
+
+    for char, escape_sequence in replacements.items():
+        input_string = input_string.replace(char, escape_sequence)
+
+    return input_string
+
+
 def extract_schema_properties(schema):
     properties = schema["properties"]
 
@@ -200,7 +225,7 @@ class WeaviateDataStore(DataStore):
 
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
             logger.debug(f"Query: {query.query}")
-            query.query = escape_double_quotes(query.query)
+            query.query = escape_special_symbols(query.query)
             logger.debug(f"Escaped query: {query.query}")
             if not hasattr(query, "filter") or not query.filter:
                 result = (

@@ -1,12 +1,11 @@
 name=aii_admin_backend
 
-tag=dev_retrieval_plugin5
-tag=retrieval_plugin5
+tag=retrieval_plugin7
 container_name=retrieval_plugin
 run:
 	docker run --network host --env-file /etc/aii/retrieval_plugin.env --name $(container_name) -d  $(name):$(tag)
 run_prod:
-	docker run --restart always --network host --name retrieval_plugin --env-file /etc/aii/retrieval_plugin.env -d dextr/aii_admin_backend:retrieval_plugin5
+	docker run --restart always --network host --name retrieval_plugin --env-file /etc/aii/retrieval_plugin.env -d dextr/aii_admin_backend:retrieval_plugin7
 build:
 	docker build -t $(name):$(tag) .
 stop:

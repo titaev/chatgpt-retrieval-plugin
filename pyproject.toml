@@ -27,7 +27,7 @@ pymilvus = "^2.2.2"
 qdrant-client = {version = "^1.0.4", python = "<3.12"}
 redis = "4.5.1"
 textract = "^1.6.5"
-langchain = "^0.0.203"
+langchain = "0.0.268"
 
 [tool.poetry.scripts]
 start = "server.main:start"

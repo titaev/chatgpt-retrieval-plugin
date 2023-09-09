@@ -101,6 +101,15 @@ def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
     return extracted_text
 
 
+def save_temp_file(file_stream):
+    temp_file_path = "/tmp/temp_file"
+
+    # write the file to a temporary location
+    with open(temp_file_path, "wb") as f:
+        f.write(file_stream)
+    return temp_file_path
+
+
 # Extract text from a file based on its mimetype
 async def extract_text_from_form_file(file: UploadFile):
     """Return the text content of a file."""
@@ -129,3 +138,39 @@ async def extract_text_from_form_file(file: UploadFile):
     os.remove(temp_file_path)
 
     return extracted_text
+
+#
+# class TableFilesSupport:
+#     """support csv or excel"""
+#
+#     excel_mimetype = ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel")
+#     csv_mimetype = ("text/csv", )
+#
+#     def is_table_file(self):
+#         return True
+#
+#     async def get_documents_from_table_file(self, file: UploadFile, mimetype: str):
+#         """support csv or excel"""
+#         file_stream = await file.read()
+#
+#         # START of sync part, should be sync because of temp_file_path same for all
+#         temp_file_path = save_temp_file(file_stream)
+#         if mimetype in self.excel_mimetype:
+#             return self.get_documents_from_excel(temp_file_path)
+#
+#         elif mimetype in self.csv_mimetype:
+#             return self.get_documents_from_csv(temp_file_path)
+#         # END of sync part
+#
+#         raise
+#
+#     def get_documents_from_excel(self, temp_file_path):
+#         loader = UnstructuredExcelLoader(temp_file_path, mode="elements")
+#         docs = loader.load()
+#         return docs
+#
+#     def get_documents_from_csv(self, temp_file_path):
+#         loader = CSVLoader(file_path=temp_file_path)
+#         docs = loader.load()
+#         return docs
+
